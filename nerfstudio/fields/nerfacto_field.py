@@ -143,7 +143,7 @@ class TCNNNerfactoField(Field):
 
         self.mlp_base = tcnn.NetworkWithInputEncoding(
             n_input_dims=3,
-            n_output_dims=1 + self.geo_feat_dim,
+            n_output_dims=2 + self.geo_feat_dim,
             encoding_config={
                 "otype": "HashGrid",
                 "n_levels": num_levels,
@@ -240,7 +240,7 @@ class TCNNNerfactoField(Field):
             self._sample_locations.requires_grad = True
         positions_flat = positions.view(-1, 3)
         h = self.mlp_base(positions_flat).view(*ray_samples.frustums.shape, -1)
-        density_before_activation, base_mlp_out = torch.split(h, [1, self.geo_feat_dim], dim=-1)
+        density_before_activation, base_mlp_out = torch.split(h, [2, self.geo_feat_dim], dim=-1)
         self._density_before_activation = density_before_activation
 
         # Rectifying the density with an exponential is much more stable than a ReLU or

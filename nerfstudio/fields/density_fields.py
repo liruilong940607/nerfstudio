@@ -91,7 +91,7 @@ class HashMLPDensityField(Field):
         if not self.use_linear:
             self.mlp_base = tcnn.NetworkWithInputEncoding(
                 n_input_dims=3,
-                n_output_dims=1,
+                n_output_dims=2,
                 encoding_config=config["encoding"],
                 network_config=config["network"],
             )

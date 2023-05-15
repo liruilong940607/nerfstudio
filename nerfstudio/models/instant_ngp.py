@@ -153,7 +153,7 @@ class NGPModel(Model):
         def update_occupancy_grid(step: int):
             self.occupancy_grid.update_every_n_steps(
                 step=step,
-                occ_eval_fn=lambda x: self.field.density_fn(x) * self.config.render_step_size,
+                occ_eval_fn=lambda x: self.field.density_fn(x).sum(dim=-1) * self.config.render_step_size,
             )
 
         return [
@@ -187,15 +187,20 @@ class NGPModel(Model):
 
         field_outputs = self.field(ray_samples)
 
+        sigmas_dt = (field_outputs[FieldHeadNames.DENSITY] * (ray_samples.frustums.ends - ray_samples.frustums.starts))[
+            ..., 0
+        ]
+        alphas = 1.0 - torch.exp(-sigmas_dt)
+
         # accumulation
         packed_info = nerfacc.pack_info(ray_indices, num_rays)
-        weights = nerfacc.render_weight_from_density(
+        trans = nerfacc.render_transmittance_from_density(
             t_starts=ray_samples.frustums.starts[..., 0],
             t_ends=ray_samples.frustums.ends[..., 0],
-            sigmas=field_outputs[FieldHeadNames.DENSITY][..., 0],
+            sigmas=field_outputs[FieldHeadNames.DENSITY].sum(dim=-1),
             packed_info=packed_info,
         )[0]
-        weights = weights[..., None]
+        weights = (trans * alphas)[..., None]
 
         rgb = self.renderer_rgb(
             rgb=field_outputs[FieldHeadNames.RGB],

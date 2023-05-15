@@ -410,8 +410,8 @@ class VolumetricSampler(Sampler):
             t_dirs = directions[ray_indices]
             positions = t_origins + t_dirs * (t_starts + t_ends)[:, None] / 2.0
             if times is None:
-                return density_fn(positions).squeeze(-1)
-            return density_fn(positions, times[ray_indices]).squeeze(-1)
+                return density_fn(positions).sum(dim=-1)
+            return density_fn(positions, times[ray_indices]).sum(dim=-1)
 
         return sigma_fn
 
